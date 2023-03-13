@@ -6,8 +6,9 @@ from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils.encoding import force_str
 from phonenumbers import phonenumberutil
 
-from phonenumber_field import formfields, modelfields
-from phonenumber_field.phonenumber import PhoneNumber, to_python
+from phonenumber_field import formfields
+from phonenumber_field import modelfields
+from phonenumber_field import PhoneNumber, to_python
 
 from . import models
 from .forms import ARPhoneNumberForm, CustomPhoneNumberFormField, PhoneNumberForm

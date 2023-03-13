@@ -31,7 +31,23 @@ Usage
 
 .. doctest:: wrapper
 
-   >>> from phonenumber_field.phonenumber import PhoneNumber
+   >>> from phonenumber_field import PhoneNumber
+
+      >>> number = PhoneNumber.from_string("+16044011234")
+      >>> print(number.as_national)
+      (604) 401-1234
+      >>> print(number.as_e164)
+      +16044011234
+      >>> print(number.as_international)
+      +1 604-401-1234
+      >>> print(number.as_rfc3966)
+      tel:+1-604-401-1234
+
+      # Using national numbers with the region keyword argument.
+      >>> canadian_number = "(604) 401 1234"
+      >>> number = PhoneNumber.from_string(canadian_number, region="CA")
+      >>> print(number.as_e164)
+      +16044011234
 
    >>> number = PhoneNumber.from_string("+16044011234")
    >>> print(number.as_national)
@@ -109,6 +125,42 @@ Usage
 .. doctest:: formfield
 
    >>> from django import forms
+      >>> from phonenumber_field import PhoneNumberField
+
+      >>> class PhoneForm(forms.Form):
+      ...     number = PhoneNumberField(region="CA")
+      ...
+
+      # Manipulating data
+      >>> form = PhoneForm({"number": "+1 604 401 1234"})
+      >>> form.is_valid()
+      True
+      >>> form.cleaned_data
+      {'number': PhoneNumber(country_code=1, national_number=6044011234, extension=None, italian_leading_zero=None, number_of_leading_zeros=None, country_code_source=1, preferred_domestic_carrier_code=None)}
+      >>> print_html(form.as_div())
+      <div>
+       <label for="id_number">
+        Number:
+       </label>
+       <input id="id_number" name="number" required="" type="tel" value="(604) 401-1234"/>
+      </div>
+
+      # Handling errors
+      >>> form = PhoneForm({"number": "invalid"})
+      >>> form.is_valid()
+      False
+      >>> print_html(form.as_div())
+      <div>
+       <label for="id_number">
+        Number:
+       </label>
+       <ul class="errorlist">
+        <li>
+         Enter a valid phone number (e.g. (506) 234-5678) or a number with an international call prefix.
+        </li>
+       </ul>
+       <input id="id_number" name="number" required="" type="tel" value="invalid"/>
+      </div>
    >>> from phonenumber_field.formfields import PhoneNumberField
 
    >>> class PhoneForm(forms.Form):
@@ -178,6 +230,33 @@ Usage
 .. doctest:: fallbackwidget
 
    >>> from django import forms
+      >>> from phonenumber_field import PhoneNumberField
+
+      >>> class CanadianPhoneForm(forms.Form):
+      ...     # RegionalPhoneNumberWidget is the default widget.
+      ...     number = PhoneNumberField(region="CA")
+      ...
+
+      # Using the national format for the field’s region.
+      >>> form = CanadianPhoneForm({"number": "+16044011234"})
+      >>> print_html(form.as_div())
+      <div>
+       <label for="id_number">
+        Number:
+       </label>
+       <input id="id_number" name="number" required="" type="tel" value="(604) 401-1234"/>
+      </div>
+
+      # Using E164 for an international number.
+      >>> french_number = "+33612345678"
+      >>> form = CanadianPhoneForm({"number": french_number})
+      >>> print_html(form.as_div())
+      <div>
+       <label for="id_number">
+        Number:
+       </label>
+       <input id="id_number" name="number" required="" type="tel" value="+33612345678"/>
+      </div>
    >>> from phonenumber_field.formfields import PhoneNumberField
 
    >>> class CanadianPhoneForm(forms.Form):
@@ -222,6 +301,75 @@ Usage
 .. doctest:: prefixwidget
 
    >>> from django import forms
+      >>> from phonenumber_field import PhoneNumberField
+      >>> from phonenumber_field import PhoneNumberPrefixWidget
+
+      # Limiting country choices.
+      >>> class CanadianPhoneForm(forms.Form):
+      ...     # RegionalPhoneNumberWidget is the default widget.
+      ...     number = PhoneNumberField(
+      ...         region="CA",
+      ...         widget=PhoneNumberPrefixWidget(
+      ...             country_choices=[
+      ...                  ("CA", "Canada"),
+      ...                  ("FR", "France"),
+      ...             ],
+      ...         ),
+      ...     )
+      ...
+
+      >>> form = CanadianPhoneForm({"number_0": "CA", "number_1": "6044011234"})
+      >>> print_html(form.as_div())
+      <div>
+       <fieldset>
+        <legend>
+         Number:
+        </legend>
+        <select id="id_number_0" name="number_0" required="">
+         <option selected="" value="CA">
+          Canada
+         </option>
+         <option value="FR">
+          France
+         </option>
+        </select>
+        <input id="id_number_1" name="number_1" required="" type="text" value="6044011234"/>
+       </fieldset>
+      </div>
+
+      # Pre-selecting a country.
+      >>> class FrenchPhoneForm(forms.Form):
+      ...     # RegionalPhoneNumberWidget is the default widget.
+      ...     number = PhoneNumberField(
+      ...         region="FR",
+      ...         widget=PhoneNumberPrefixWidget(
+      ...             initial="FR",
+      ...             country_choices=[
+      ...                  ("CA", "Canada"),
+      ...                  ("FR", "France"),
+      ...             ],
+      ...         ),
+      ...     )
+      ...
+
+      >>> form = FrenchPhoneForm()
+      >>> print_html(form.as_div())
+      <div>
+       <fieldset>
+        <legend>
+         Number:
+        </legend>
+        <select id="id_number_0" name="number_0" required="">
+         <option value="CA">
+          Canada
+         </option>
+         <option selected="" value="FR">
+          France
+         </option>
+        </select>
+        <input id="id_number_1" name="number_1" required="" type="text"/>
+       </fieldset>
+      </div>
    >>> from phonenumber_field.formfields import PhoneNumberField
    >>> from phonenumber_field.widgets import PhoneNumberPrefixWidget
 
@@ -313,6 +461,22 @@ Usage
 .. doctest:: serializerfield
 
     >>> from django.conf import settings
+        >>> from rest_framework import renderers, serializers
+        >>> from phonenumber_field import PhoneNumberField
+
+        >>> class PhoneNumberSerializer(serializers.Serializer):
+        ...     number = PhoneNumberField(region="CA")
+        ...
+
+        >>> serializer = PhoneNumberSerializer(data={"number": "604 401 1234"})
+        >>> serializer.is_valid()
+        True
+        >>> serializer.validated_data
+        OrderedDict([('number', PhoneNumber(country_code=1, national_number=6044011234, extension=None, italian_leading_zero=None, number_of_leading_zeros=None, country_code_source=20, preferred_domestic_carrier_code=None))])
+
+        # Using the PHONENUMBER_DEFAULT_FORMAT.
+        >>> renderers.JSONRenderer().render(serializer.data)
+        b'{"number":"+16044011234"}'
     >>> from rest_framework import renderers, serializers
     >>> from phonenumber_field.serializerfields import PhoneNumberField
 

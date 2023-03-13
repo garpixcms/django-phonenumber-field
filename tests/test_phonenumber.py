@@ -1,7 +1,7 @@
 import phonenumbers
 from django.test import SimpleTestCase, override_settings
 
-from phonenumber_field.phonenumber import PhoneNumber
+from phonenumber_field import PhoneNumber
 
 
 class PhoneNumberTest(SimpleTestCase):

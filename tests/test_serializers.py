@@ -1,7 +1,7 @@
 from django.test import SimpleTestCase, override_settings
 from rest_framework import serializers
 
-from phonenumber_field.phonenumber import PhoneNumber
+from phonenumber_field import PhoneNumber
 from phonenumber_field.serializerfields import PhoneNumberField
 
 from .models import OptionalPhoneNumber

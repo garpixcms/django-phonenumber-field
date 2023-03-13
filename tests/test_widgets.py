@@ -5,7 +5,7 @@ from django.test import SimpleTestCase, override_settings
 from django.utils import translation
 
 from phonenumber_field import formfields, widgets
-from phonenumber_field.phonenumber import PhoneNumber
+from phonenumber_field import PhoneNumber
 from phonenumber_field.widgets import (
     PhoneNumberInternationalFallbackWidget,
     PhoneNumberPrefixWidget,
